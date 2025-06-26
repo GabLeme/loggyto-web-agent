@@ -10,20 +10,20 @@
 
   const { endpoint, apiKey, apiSecret } = getConfig();
 
-  console.log('[Loggyto Agent] Loaded config:', { endpoint, apiKey, apiSecret });
+  const levels = ['log', 'info', 'warn', 'error', 'debug'];
+  const originalConsole = {};
 
+  levels.forEach((level) => {
+    originalConsole[level] = console[level];
+  });
 
-  if (!endpoint || !apiKey || !apiSecret) {
-    console.warn('[Loggyto Agent] Config missing: endpoint/apiKey/apiSecret');
-    return;
-  }
+  if (!endpoint || !apiKey || !apiSecret) return;
 
   function generateMessageId() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
 
   function sendLoggytoLog(level, message, labels = {}) {
-    console.log("send event")
     const payload = {
       timestamp: new Date().toISOString(),
       messageId: generateMessageId(),
@@ -44,9 +44,8 @@
     }).catch(() => {});
   }
 
-  const levels = ['log', 'info', 'warn', 'error', 'debug'];
   levels.forEach((level) => {
-    const original = console[level];
+    const original = originalConsole[level];
     console[level] = function (...args) {
       original.apply(console, args);
       const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
