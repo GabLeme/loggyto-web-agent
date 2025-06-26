@@ -10,6 +10,9 @@
 
   const { endpoint, apiKey, apiSecret } = getConfig();
 
+  console.log('[Loggyto Agent] Loaded config:', { endpoint, apiKey, apiSecret });
+
+
   if (!endpoint || !apiKey || !apiSecret) {
     console.warn('[Loggyto Agent] Config missing: endpoint/apiKey/apiSecret');
     return;
