@@ -19,7 +19,7 @@
 
   if (!endpoint || !apiKey || !apiSecret) return;
 
-  const LOG_ENDPOINT = new URL(endpoint).pathname;
+  const LOG_ENDPOINT = new URL(endpoint, window.location.href).pathname;
 
   function generateMessageId() {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -37,14 +37,13 @@
   function sendLoggytoLog(level, message, labels = {}) {
     const payload = {
       timestamp: new Date().toISOString(),
-      messageId: generateMessageId(),
+      message_id: generateMessageId(),
       message,
       level: level.toUpperCase(),
-      timestampInferred: false,
+      timestamp_inferred: false,
       labels
     };
 
-    // Protege contra logar a própria falha de envio
     try {
       fetch(endpoint, {
         method: 'POST',
@@ -54,11 +53,10 @@
           'x-api-secret': apiSecret
         },
         body: JSON.stringify(payload)
-      }).catch(() => { /* silencioso */ });
-    } catch (_) { /* silencioso */ }
+      }).catch(() => {});
+    } catch (_) {}
   }
 
-  // Interceptar console
   levels.forEach((level) => {
     const original = originalConsole[level];
     console[level] = function (...args) {
@@ -66,24 +64,22 @@
       try {
         const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
         sendLoggytoLog(level, message, { type: 'console' });
-      } catch (_) { /* silencioso */ }
+      } catch (_) {}
     };
   });
 
-  // window.onerror
   window.onerror = function (msg, url, lineNo, columnNo, error) {
     if (isSelfLogging(url)) return;
 
     sendLoggytoLog('error', msg, {
       type: 'window.onerror',
       url,
-      lineNo: lineNo?.toString(),
-      columnNo: columnNo?.toString(),
+      line_no: lineNo?.toString(),
+      column_no: columnNo?.toString(),
       stack: error?.stack || ''
     });
   };
 
-  // window.onunhandledrejection
   window.onunhandledrejection = function (event) {
     sendLoggytoLog('error', 'Unhandled Promise rejection', {
       type: 'unhandledrejection',
@@ -91,7 +87,6 @@
     });
   };
 
-  // Interceptar fetch
   const originalFetch = window.fetch;
   window.fetch = async (...args) => {
     try {
