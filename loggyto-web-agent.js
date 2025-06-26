@@ -20,6 +20,7 @@
   }
 
   function sendLoggytoLog(level, message, labels = {}) {
+    console.log("send event")
     const payload = {
       timestamp: new Date().toISOString(),
       messageId: generateMessageId(),
